@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Marvel Cinematic Universe</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Orbitron:wght@500;900&display=swap');
+
+        body { margin: 0; overflow: hidden; background: radial-gradient(circle at center, #050505 0%, #000 90%); font-family: 'Orbitron', sans-serif; }
+        
+        #ui { position: absolute; top: 10%; width: 100%; text-align: center; color: #fff; pointer-events: none; z-index: 10; }
+        
+        /* METALLIC TEXT STYLE */
+        h1 {
+            font-family: 'Cinzel', serif; font-size: 3rem; margin: 0; letter-spacing: 8px; font-weight: 700; text-transform: uppercase;
+            background: linear-gradient(to bottom, #cfc7f8 0%, #ffffff 50%, #6c757d 51%, #a9a9a9 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 2px 0px rgba(0,0,0,0.5)); text-shadow: 0px 0px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        #hero-name { font-size: 1.2rem; color: #49a3d3; margin-top: 15px; letter-spacing: 4px; font-weight: 500; text-shadow: 0 0 10px currentColor; transition: color 0.3s ease; }
+        
+        #video-container { position: absolute; bottom: 20px; right: 20px; width: 240px; height: 160px; border: 2px solid rgba(255, 255, 255, 0.2); z-index: 20; background-color: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); opacity: 0.8; }
+        #output_canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+</head>
+<body>
+
+<div id="ui">
+    <h1>MARVEL CINEMATIC UNIVERSE</h1>
+    <div id="hero-name">Initializing Systems...</div>
+</div>
+
+<div id="video-container">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="output_canvas"></canvas>
+</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    let currentTech = 'neutral';
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const nameEl = document.getElementById('hero-name');
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 60;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    composer.addPass(bloomPass);
+
+    const COUNT = 14000; 
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(COUNT * 3);
+    const colors = new Float32Array(COUNT * 3);
+    const targetPositions = new Float32Array(COUNT * 3);
+    const targetColors = new Float32Array(COUNT * 3);
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({ size: 0.4, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true });
+    const particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+
+    function getBackground(color) {
+        return {
+            x: (Math.random() - 0.5) * 220,
+            y: (Math.random() - 0.5) * 160,
+            z: (Math.random() - 0.5) * 120,
+            r: color[0] * 0.2, g: color[1] * 0.2, b: color[2] * 0.2
+        };
+    }
+
+    function getDeadpool(i) {
+        if (i < COUNT * 0.4) return getBackground([1.0, 0.1, 0.1]);
+        const t = (i - COUNT * 0.4) / (COUNT * 0.6);
+        
+        if (t < 0.25) { // Stripe
+             return { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 70, z: (Math.random() - 0.5) * 5, r: 0.1, g: 0.1, b: 0.1 };
+        }
+        else if (t < 0.45) { // Eyes (Solid Matte White)
+            const side = Math.random() > 0.5 ? 1 : -1;
+            const eyeCenterX = side * 16; 
+            const eyeCenterY = 4;
+            const a = 7; const b = 3.5;
+            const fillFactor = Math.sqrt(Math.random()); // Uniform fill
+            const angle = Math.random() * Math.PI * 2;
+            let ex = a * fillFactor * Math.cos(angle);
+            let ey = b * fillFactor * Math.sin(angle);
+            const tilt = side * -0.35; 
+            let rotatedX = ex * Math.cos(tilt) - ey * Math.sin(tilt);
+            let rotatedY = ex * Math.sin(tilt) + ey * Math.cos(tilt);
+            // Color 0.8 to avoid bloom threshold
+            return { x: eyeCenterX + rotatedX, y: eyeCenterY + rotatedY, z: 3, r: 0.8, g: 0.8, b: 0.8 };
+        }
+        else { // Head
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 28 + Math.random() * 12; 
+            return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: (Math.random() - 0.5) * 10, r: 0.9 + Math.random()*0.1, g: 0.0, b: 0.1 };
+        }
+    }
+
+    function getLoki(i) {
+        if (i < COUNT * 0.4) return getBackground([0, 1, 0.4]);
+        const r = 18 + Math.random() * 4;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        return { x: r * Math.sin(phi) * Math.cos(theta), y: r * Math.sin(phi) * Math.sin(theta), z: r * Math.cos(phi), r: 0.0, g: 1.0, b: 0.4 };
+    }
+
+    function getThanos(i) {
+        if (i < COUNT * 0.4) return getBackground([0.8, 0.2, 1]);
+        const stones = [{c:[1,1,0],p:[0,0,0]}, {c:[0,0.2,1],p:[-6,6,0]}, {c:[1,0,0],p:[6,6,0]}, {c:[0.6,0,1],p:[-8,-4,0]}, {c:[1,0.5,0],p:[8,-4,0]}, {c:[0,1,0.2],p:[0,-10,0]}];
+        const stone = stones[i % stones.length];
+        const r = Math.random() * 4;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        return { x: stone.p[0] + r * Math.sin(phi) * Math.cos(theta), y: stone.p[1] + r * Math.sin(phi) * Math.sin(theta), z: stone.p[2] + r * Math.cos(phi), r: stone.c[0], g: stone.c[1], b: stone.c[2] };
+    }
+
+    function getThor(i) {
+        if (i < COUNT * 0.4) return getBackground([0.4, 0.8, 1]);
+        const t = (i - COUNT*0.4) / (COUNT*0.6);
+        if (t < 0.6) return { x:(Math.random()-0.5)*28, y:(Math.random()-0.5)*16+12, z:(Math.random()-0.5)*14, r:0.7, g:0.7, b:0.8 };
+        if (t < 0.9) return { x:(Math.random()-0.5)*2.5, y:(Math.random()*-35)+4, z:(Math.random()-0.5)*2.5, r:0.35, g:0.25, b:0.15 };
+        const angle = Math.random()*Math.PI*2;
+        return { x:Math.cos(angle)*25, y:Math.sin(angle)*25+8, z:(Math.random()-0.5)*15, r:0.4, g:0.8, b:1.0 };
+    }
+
+    // --- FIXED CAPTAIN AMERICA FUNCTION (SOLID STAR) ---
+    function getCap(i) {
+        // 1. Background (40%)
+        if (i < COUNT * 0.4) return getBackground([0.2, 0.5, 1]);
+
+        // 2. Shield Logic (60%)
+        const t = (i - COUNT * 0.4) / (COUNT * 0.6);
+        const angle = Math.random() * Math.PI * 2;
+        const layer = Math.floor(t * 4);
+        
+        // Rings
+        if (layer === 0) return { x: Math.cos(angle)*(40+Math.random()*2), y: Math.sin(angle)*(40+Math.random()*2), z: (Math.random()-0.5)*2, r: 1, g: 0, b: 0 };
+        if (layer === 1) return { x: Math.cos(angle)*(32+Math.random()*2), y: Math.sin(angle)*(32+Math.random()*2), z: (Math.random()-0.5)*2, r: 1, g: 1, b: 1 };
+        if (layer === 2) return { x: Math.cos(angle)*(24+Math.random()*2), y: Math.sin(angle)*(24+Math.random()*2), z: (Math.random()-0.5)*2, r: 1, g: 0, b: 0 };
+        
+        // Center Area
+        // Blue Field (approx 60% of center particles)
+        if (Math.random() > 0.4) {
+            const radius = Math.random() * 18;
+            return { x: Math.cos(angle)*radius, y: Math.sin(angle)*radius, z: -0.5, r: 0, g: 0.2, b: 0.8 };
+        } else {
+            // SOLID SHARP WHITE STAR LOGIC
+            const rOut = 13; const rIn = 5; const totalSegments = 10;
+            // Pick random triangle segment of star
+            const k = Math.floor(Math.random() * totalSegments);
+            const rk = (k % 2 === 0) ? rOut : rIn;
+            const rk1 = ((k + 1) % 2 === 0) ? rOut : rIn;
+            // Rotated -PI/2 to point up
+            const ak = (k / totalSegments) * Math.PI * 2 - (Math.PI / 2);
+            const ak1 = ((k + 1) / totalSegments) * Math.PI * 2 - (Math.PI / 2);
+            const pk = { x: rk * Math.cos(ak), y: rk * Math.sin(ak) };
+            const pk1 = { x: rk1 * Math.cos(ak1), y: rk1 * Math.sin(ak1) };
+            
+            // Uniform random point in triangle (Center -> Pk -> Pk1)
+            const r1 = Math.sqrt(Math.random());
+            const r2 = Math.random();
+            const finalX = (r1 * (1 - r2)) * pk.x + (r1 * r2) * pk1.x;
+            const finalY = (r1 * (1 - r2)) * pk.y + (r1 * r2) * pk1.y;
+
+            return { x: finalX, y: finalY, z: 0.8, r: 1.0, g: 1.0, b: 1.0 };
+        }
+    }
+
+    function getTony(i) {
+        if (i < COUNT * 0.4) return getBackground([0, 0.8, 1]);
+        const t = (i - COUNT*0.4) / (COUNT*0.6);
+        let lay = t < 0.4 ? 0 : t < 0.6 ? 1 : t < 0.8 ? 2 : 3;
+        const rads = [15, 22, 30, 38];
+        const r = rads[lay];
+        const side = Math.floor(Math.random() * 3);
+        const a1 = (side * 120) * (Math.PI / 180);
+        const a2 = ((side + 1) * 120) * (Math.PI / 180);
+        const p1 = { x: Math.cos(a1)*r, y: Math.sin(a1)*r };
+        const p2 = { x: Math.cos(a2)*r, y: Math.sin(a2)*r };
+        const lerp = Math.random();
+        const col = lay === 0 ? {r:0.8, g:0.95, b:1} : {r:0.2, g:0.6, b:1};
+        return { x:p1.x + (p2.x-p1.x)*lerp, y:p1.y + (p2.y-p1.y)*lerp, z:0, r:col.r, g:col.g, b:col.b };
+    }
+
+    function updateState(tech) {
+        if (currentTech === tech) return;
+        currentTech = tech;
+        nameEl.style.color = '#49a3d3'; 
+
+        if (tech === 'thor') { nameEl.innerText = "THOR — MJOLNIR"; bloomPass.strength = 3.0; }
+        else if (tech === 'cap') { nameEl.innerText = "CAPTAIN AMERICA — SHIELD"; bloomPass.strength = 2.0; }
+        else if (tech === 'loki') { nameEl.innerText = "LOKI — MAGIC"; bloomPass.strength = 2.5; }
+        else if (tech === 'thanos') { nameEl.innerText = "THANOS — INFINITY STONES"; bloomPass.strength = 4.0; }
+        else if (tech === 'tony') { nameEl.innerText = "IRON MAN — ARC REACTOR"; bloomPass.strength = 3.0; }
+        else if (tech === 'deadpool') { nameEl.innerText = "DEADPOOL — MARVEL JESUS"; nameEl.style.color = '#ff3333'; bloomPass.strength = 4.5; }
+        else { nameEl.innerText = "AWAITING ACTIVATION..."; bloomPass.strength = 1.2; }
+
+        for (let i = 0; i < COUNT; i++) {
+            let p;
+            if (tech === 'thor') p = getThor(i);
+            else if (tech === 'cap') p = getCap(i);
+            else if (tech === 'loki') p = getLoki(i);
+            else if (tech === 'thanos') p = getThanos(i);
+            else if (tech === 'tony') p = getTony(i);
+            else if (tech === 'deadpool') p = getDeadpool(i);
+            else { p = { x:(Math.random()-0.5)*220, y:(Math.random()-0.5)*160, z:(Math.random()-0.5)*120, r:0.05, g:0.05, b:0.15 }; }
+            targetPositions[i*3] = p.x; targetPositions[i*3+1] = p.y; targetPositions[i*3+2] = p.z;
+            targetColors[i*3] = p.r; targetColors[i*3+1] = p.g; targetColors[i*3+2] = p.b;
+        }
+    }
+
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.8, minTrackingConfidence: 0.8 });
+    
+    hands.onResults((results) => {
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        let detected = 'neutral';
+        
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const lm = results.multiHandLandmarks[0];
+            
+            // --- STRICTER GESTURE DEFINITIONS ---
+            const isUp = (tip, pip) => lm[tip].y < (lm[pip].y - 0.03);
+            const isDown = (tip, pip) => lm[tip].y > (lm[pip].y + 0.01);
+
+            const indexUp = isUp(8, 6); const middleUp = isUp(12, 10); const ringUp = isUp(16, 14); const pinkyUp = isUp(20, 18);
+            const indexDown = isDown(8, 6); const middleDown = isDown(12, 10); const ringDown = isDown(16, 14); const pinkyDown = isDown(20, 18);
+
+            const handSize = Math.hypot(lm[0].x - lm[9].x, lm[0].y - lm[9].y);
+            const pinchDist = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
+            const isPinching = pinchDist < (handSize * 0.35); 
+            const indexExtended = lm[8].y < lm[5].y; 
+
+            // --- PRIORITY CHAIN ---
+            if (middleUp && indexDown && ringDown) { detected = 'deadpool'; }
+            else if (indexUp && middleUp && ringDown && pinkyDown && !isPinching) { detected = 'tony'; }
+            else if (indexUp && middleUp && ringUp && pinkyUp) { detected = 'thor'; }
+            else if (indexUp && middleDown && ringDown && pinkyDown) { detected = 'loki'; }
+            else if (isPinching && indexExtended) { detected = 'thanos'; }
+            else if (indexDown && middleDown && ringDown && pinkyDown) { detected = 'cap'; }
+        }
+        
+        updateState(detected);
+    });
+
+    const cameraUtils = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 640, height: 480
+    });
+    cameraUtils.start();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now();
+        const pos = particles.geometry.attributes.position.array;
+        const col = particles.geometry.attributes.color.array;
+
+        for(let i=0; i<COUNT*3; i++) {
+            pos[i] += (targetPositions[i] - pos[i]) * 0.12;
+            col[i] += (targetColors[i] - col[i]) * 0.12;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+        particles.geometry.attributes.color.needsUpdate = true;
+
+        // --- ANIMATIONS ---
+        if (currentTech === 'thor') { 
+            particles.rotation.y += 0.005; 
+            particles.rotation.x = 0; particles.rotation.z = 0;
+            bloomPass.strength = 1.5 + (Math.random() > 0.98 ? 1.5 : 0);
+        }
+        else if (currentTech === 'cap') { particles.rotation.z += 0.015; }
+        else if (currentTech === 'loki') { particles.rotation.y += 0.02; particles.position.y = Math.sin(time*0.002)*2; }
+        else if (currentTech === 'thanos') { particles.rotation.y += 0.005; bloomPass.strength = 3.0 + Math.sin(time*0.005)*1.5; }
+        else if (currentTech === 'tony') { particles.rotation.z += 0.01; bloomPass.strength = 2.0 + Math.sin(time*0.003)*0.5; }
+        else if (currentTech === 'deadpool') { 
+            particles.rotation.z += 0.05; bloomPass.strength = 4.5 + Math.sin(time * 0.01) * 2.0;
+            particles.position.x = (Math.random()-0.5)*0.5; particles.position.y = (Math.random()-0.5)*0.5;
+        }
+        else { 
+            particles.rotation.y += 0.001; bloomPass.strength = 1.0 + Math.sin(time * 0.001) * 0.2; particles.position.set(0,0,0);
+        }
+
+        composer.render();
+    }
+    animate();
+</script>
+</body>
+</html>
