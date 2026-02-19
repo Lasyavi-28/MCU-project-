@@ -8,6 +8,21 @@ This project recreates character symbolism using procedural generation, geometry
 
 The concept was inspired by a similar visualization project based on the popular anime series *Jujutsu Kaisen (JJK)*. The idea of building recognizable forms entirely from particles served as the creative foundation for this project.
 
+## ✨ Features
+
+- 🎥 Real-time Hand Gesture Detection using MediaPipe
+- 🌌 14,000 Dynamic Particles powered by Three.js
+- ⚡ Cinematic Bloom Effects (UnrealBloomPass)
+- 🛡️ Captain America Shield (Rotating Rings + Solid Star Geometry)
+- ⚡ Thor Lightning Mode (Energy Burst Animation)
+- 🟢 Loki Magic Sphere (Floating Rotational Effect)
+- 💎 Thanos Infinity Stones (Color-Specific Particle Clusters)
+- 🔵 Iron Man Arc Reactor (Triangular Core Geometry)
+- 🔴 Deadpool Mode (Dynamic Eye Geometry + Chaos Spin)
+- 🔄 Smooth Particle Morphing Between Hero States
+
+
+
 ## Development Note
 
 The implementation and refinement of geometric logic were developed with assistance from Google Gemini.
@@ -22,4 +37,3 @@ The implementation and refinement of geometric logic were developed with assista
 3. Open the `index.html` file in your browser.
 
 Make sure you are using a modern browser that supports WebGL.
-
