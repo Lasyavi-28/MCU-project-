@@ -25,8 +25,6 @@
         #output_canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transform: scaleX(-1); }
 
         /* --- INFO BUTTON & MODAL --- */
-        
-        /* Glowing 'i' Button */
         #info-btn {
             position: absolute; bottom: 30px; left: 30px; width: 50px; height: 50px;
             border-radius: 50%; background: rgba(5, 10, 20, 0.8); 
@@ -35,7 +33,6 @@
             z-index: 50; box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
             transition: all 0.3s ease;
         }
-        /* The magical glowing particle ring around the button */
         #info-btn::before {
             content: ''; position: absolute; top: -6px; left: -6px; right: -6px; bottom: -6px;
             border-radius: 50%; border: 1.5px solid rgba(0, 217, 255, 0.6);
@@ -49,7 +46,6 @@
             100% { transform: scale(1.05); opacity: 1; }
         }
 
-        /* Glassmorphism Info Panel */
         #info-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
             width: 440px; background: rgba(5, 10, 20, 0.7); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -80,9 +76,10 @@
         .color-tony { color: #00e5ff; text-shadow: 0 0 8px rgba(0, 229, 255, 0.6); }
         .color-thanos { color: #d400ff; text-shadow: 0 0 8px rgba(212, 0, 255, 0.6); }
         .color-loki { color: #00ff66; text-shadow: 0 0 8px rgba(0, 255, 102, 0.6); }
-        .color-deadpool { color: #ff3333; text-shadow: 0 0 8px rgba(255, 51, 51, 0.6); }
+        .color-spidey { color: #ff3333; text-shadow: 0 0 10px rgba(255, 51, 51, 0.8); }
+        .color-deadpool { color: #ff0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.8); }
 
-        /* --- ACTUAL DOM PARTICLES AROUND MODAL --- */
+        /* DOM PARTICLES AROUND MODAL */
         #particle-ring-container {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 100%; height: 100%; z-index: -1; pointer-events: none;
@@ -136,6 +133,7 @@
         <li><span class="gesture-name">🖐️ Full Palm</span> <span class="color-thor">THOR</span></li>
         <li><span class="gesture-name">✊ Closed Fist</span> <span class="color-cap">CAPTAIN AMERICA</span></li>
         <li><span class="gesture-name">✌️ Peace Sign</span> <span class="color-tony">IRON MAN</span></li>
+        <li><span class="gesture-name">🤟 Web Shooter</span> <span class="color-spidey">SPIDER-MAN</span></li>
         <li><span class="gesture-name">🤏 Pinch</span> <span class="color-thanos">THANOS</span></li>
         <li><span class="gesture-name">☝️ Single Finger</span> <span class="color-loki">LOKI</span></li>
         <li><span class="gesture-name">🖕 Middle Finger</span> <span class="color-deadpool">DEADPOOL</span></li>
@@ -156,37 +154,26 @@
         infoBtn.innerText = infoModal.classList.contains('active') ? 'X' : 'i';
     });
 
-    // Generate actual particle DOM elements around the modal
     function createUIParticles(layerId, count, radiusBase) {
         const layer = document.getElementById(layerId);
         for(let i=0; i<count; i++) {
             const p = document.createElement('div');
             p.className = 'ui-particle';
             const angle = (i / count) * Math.PI * 2 + Math.random();
-            // Randomize distance slightly to make a "dust cloud" ring
             const radius = radiusBase + (Math.random() * 30 - 15);
             const x = Math.cos(angle) * radius;
             const y = Math.sin(angle) * radius;
-            
             p.style.left = `calc(50% + ${x}px)`;
             p.style.top = `calc(50% + ${y}px)`;
-            
             const size = Math.random() * 2.5 + 1;
-            p.style.width = `${size}px`;
-            p.style.height = `${size}px`;
+            p.style.width = `${size}px`; p.style.height = `${size}px`;
             p.style.opacity = Math.random() * 0.6 + 0.2;
-            
-            // Randomize color slightly (Blue to Purple)
-            if (Math.random() > 0.5) {
-                p.style.boxShadow = `0 0 8px #d400ff, 0 0 15px #d400ff`;
-            }
+            if (Math.random() > 0.5) p.style.boxShadow = `0 0 8px #d400ff, 0 0 15px #d400ff`;
             layer.appendChild(p);
         }
     }
-    // Outer and Inner particle rings
     createUIParticles('layer1', 60, 270);
     createUIParticles('layer2', 45, 230);
-
 
     // --- THREE.JS LOGIC ---
     let currentTech = 'neutral';
@@ -208,7 +195,7 @@
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
     composer.addPass(bloomPass);
 
-    const COUNT = 14000; // Restored to 14k for Deadpool
+    const COUNT = 14000; 
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(COUNT * 3);
     const colors = new Float32Array(COUNT * 3);
@@ -231,29 +218,105 @@
         };
     }
 
-    // --- DEADPOOL ---
+    // --- SPIDER-MAN REWRITE: SHARP ANGULAR LOGO ---
+    function getSpiderman(i) {
+        // Deep cosmic blue/red background
+        if (i < COUNT * 0.4) return getBackground([0.1, 0.1, 0.8]);
+
+        const t = (i - COUNT * 0.4) / (COUNT * 0.6);
+        let x, y, z = (Math.random() - 0.5) * 2;
+        
+        // 1. Sharp Shield-Shaped Abdomen (15% of particles)
+        if (t < 0.15) {
+            let u = Math.random();
+            let v = Math.random();
+            y = -1 - u * 15; // Vertical length
+            let width;
+            if (u < 0.3) {
+                // Top section: sharp widening
+                width = 1.0 + (u / 0.3) * 3.5; 
+            } else {
+                // Bottom section: long sharp taper to a point
+                width = 4.5 * (1 - (u - 0.3) / 0.7); 
+            }
+            x = (v - 0.5) * width * 2;
+        } 
+        // 2. Sharp Pointed Head (5% of particles)
+        else if (t < 0.20) {
+            let u = Math.random();
+            let v = Math.random();
+            y = 0 + u * 5; 
+            let width;
+            if (u < 0.5) {
+               width = 1.0 + (u / 0.5) * 2.0; // Base widening
+            } else {
+               width = 3.0 * (1 - (u - 0.5) / 0.5); // Taper to mandibles
+            }
+            x = (v - 0.5) * width * 2;
+        } 
+        // 3. The 8 Angular Legs (80% of particles)
+        else {
+            const legNum = Math.floor((t - 0.20) / 0.10); // 0 to 7 (8 legs total)
+            const isLeft = legNum % 2 === 0;
+            const legPair = Math.floor(legNum / 2); // Pair 0, 1, 2, 3
+            
+            let p0, p1, p2; // Three anchors: Base, Sharp Elbow, Tip
+            
+            // Map exact coordinates from the sharp logo reference
+            if (legPair === 0) { // Top legs (Up and out, bend straight up)
+                p0 = [3, 1]; p1 = [10, 10]; p2 = [9, 24];
+            } else if (legPair === 1) { // Upper-mid legs (Out, bend out/up)
+                p0 = [3, -1]; p1 = [14, 2]; p2 = [20, 16];
+            } else if (legPair === 2) { // Lower-mid legs (Out, bend out/down)
+                p0 = [3, -3]; p1 = [15, -6]; p2 = [13, -24];
+            } else { // Bottom legs (Down, bend down/in hugging the abdomen)
+                p0 = [2.5, -5]; p1 = [8, -14]; p2 = [3, -28];
+            }
+
+            let u = Math.random();
+            // Assign particles to line segments (40% to first thick segment, 60% to long thin segment)
+            let isFirstSeg = u < 0.4;
+            let segU = isFirstSeg ? (u / 0.4) : ((u - 0.4) / 0.6);
+
+            // Calculate precise linear interpolation (Straight lines for sharp corners)
+            if (isFirstSeg) {
+                x = p0[0] + (p1[0] - p0[0]) * segU;
+                y = p0[1] + (p1[1] - p0[1]) * segU;
+            } else {
+                x = p1[0] + (p2[0] - p1[0]) * segU;
+                y = p1[1] + (p2[1] - p1[1]) * segU;
+            }
+
+            // Tapering thickness (Thick at base -> Thin at tips)
+            let thickness = (1 - u) * 2.0; 
+            x += (Math.random() - 0.5) * thickness;
+            y += (Math.random() - 0.5) * thickness;
+            
+            if (isLeft) x = -x; // Mirror perfectly
+        }
+        
+        // Scale and shift the final shape
+        return { 
+            x: x * 1.1, 
+            y: (y + 2) * 1.1, 
+            z: z, 
+            r: 1.0, g: 0.05, b: 0.05 // Spidey Red
+        };
+    }
+
     function getDeadpool(i) {
         if (i < COUNT * 0.4) return getBackground([1.0, 0.1, 0.1]);
         const t = (i - COUNT * 0.4) / (COUNT * 0.6);
-        
-        if (t < 0.25) { // Central Stripe
-             return { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 70, z: (Math.random() - 0.5) * 5, r: 0.1, g: 0.1, b: 0.1 };
-        }
-        else if (t < 0.45) { // Eyes (Solid Matte White)
+        if (t < 0.25) { return { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 70, z: (Math.random() - 0.5) * 5, r: 0.1, g: 0.1, b: 0.1 }; }
+        else if (t < 0.45) { 
             const side = Math.random() > 0.5 ? 1 : -1;
-            const eyeCenterX = side * 16; 
-            const eyeCenterY = 4;
             const a = 7; const b = 3.5;
             const fillFactor = Math.sqrt(Math.random()); 
             const angle = Math.random() * Math.PI * 2;
-            let ex = a * fillFactor * Math.cos(angle);
-            let ey = b * fillFactor * Math.sin(angle);
+            let ex = a * fillFactor * Math.cos(angle); let ey = b * fillFactor * Math.sin(angle);
             const tilt = side * -0.35; 
-            let rotatedX = ex * Math.cos(tilt) - ey * Math.sin(tilt);
-            let rotatedY = ex * Math.sin(tilt) + ey * Math.cos(tilt);
-            return { x: eyeCenterX + rotatedX, y: eyeCenterY + rotatedY, z: 3, r: 0.8, g: 0.8, b: 0.8 };
-        }
-        else { // Head circle
+            return { x: (side * 16) + (ex * Math.cos(tilt) - ey * Math.sin(tilt)), y: 4 + (ex * Math.sin(tilt) + ey * Math.cos(tilt)), z: 3, r: 0.8, g: 0.8, b: 0.8 };
+        } else {
             const angle = Math.random() * Math.PI * 2;
             const radius = 28 + Math.random() * 12; 
             return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: (Math.random() - 0.5) * 10, r: 0.9 + Math.random()*0.1, g: 0.0, b: 0.1 };
@@ -297,23 +360,16 @@
         if (layer === 2) return { x: Math.cos(angle)*(24+Math.random()*2), y: Math.sin(angle)*(24+Math.random()*2), z: (Math.random()-0.5)*2, r: 1, g: 0, b: 0 };
         
         if (Math.random() > 0.4) {
-            const radius = Math.random() * 18;
-            return { x: Math.cos(angle)*radius, y: Math.sin(angle)*radius, z: -0.5, r: 0, g: 0.2, b: 0.8 };
+            return { x: Math.cos(angle)*(Math.random()*18), y: Math.sin(angle)*(Math.random()*18), z: -0.5, r: 0, g: 0.2, b: 0.8 };
         } else {
             const rOut = 13; const rIn = 5; const totalSegments = 10;
             const k = Math.floor(Math.random() * totalSegments);
-            const rk = (k % 2 === 0) ? rOut : rIn;
-            const rk1 = ((k + 1) % 2 === 0) ? rOut : rIn;
             const ak = (k / totalSegments) * Math.PI * 2 - (Math.PI / 2);
             const ak1 = ((k + 1) / totalSegments) * Math.PI * 2 - (Math.PI / 2);
-            const pk = { x: rk * Math.cos(ak), y: rk * Math.sin(ak) };
-            const pk1 = { x: rk1 * Math.cos(ak1), y: rk1 * Math.sin(ak1) };
-            
+            const pk = { x: ((k % 2 === 0) ? rOut : rIn) * Math.cos(ak), y: ((k % 2 === 0) ? rOut : rIn) * Math.sin(ak) };
+            const pk1 = { x: (((k + 1) % 2 === 0) ? rOut : rIn) * Math.cos(ak1), y: (((k + 1) % 2 === 0) ? rOut : rIn) * Math.sin(ak1) };
             const r1 = Math.sqrt(Math.random()); const r2 = Math.random();
-            const finalX = (r1 * (1 - r2)) * pk.x + (r1 * r2) * pk1.x;
-            const finalY = (r1 * (1 - r2)) * pk.y + (r1 * r2) * pk1.y;
-
-            return { x: finalX, y: finalY, z: 0.8, r: 1.0, g: 1.0, b: 1.0 };
+            return { x: (r1 * (1 - r2)) * pk.x + (r1 * r2) * pk1.x, y: (r1 * (1 - r2)) * pk.y + (r1 * r2) * pk1.y, z: 0.8, r: 1.0, g: 1.0, b: 1.0 };
         }
     }
 
@@ -342,8 +398,9 @@
         else if (tech === 'cap') { nameEl.innerText = "CAPTAIN AMERICA — VIBRANIUM SHIELD"; bloomPass.strength = 2.0; }
         else if (tech === 'loki') { nameEl.innerText = "LOKI — MAGIC"; bloomPass.strength = 2.5; }
         else if (tech === 'thanos') { nameEl.innerText = "THANOS — INFINITY STONES"; bloomPass.strength = 4.0; }
-        else if (tech === 'tony') { nameEl.innerText = "IRON MAN — ARC REACTOR"; bloomPass.strength = 3.0; }
-        else if (tech === 'deadpool') { nameEl.innerText = "DEADPOOL — MARVEL JESUS"; nameEl.style.color = '#ff3333'; bloomPass.strength = 4.5; }
+        else if (tech === 'tony') { nameEl.innerText = "IRON MAN — ARC-REACTOR CORE"; bloomPass.strength = 3.0; }
+        else if (tech === 'deadpool') { nameEl.innerText = "DEADPOOL — MARVEL JESUS"; nameEl.style.color = '#ff0000'; bloomPass.strength = 4.5; }
+        else if (tech === 'spidey') { nameEl.innerText = "SPIDER-MAN — WEB SHOOTERS"; nameEl.style.color = '#ff3333'; bloomPass.strength = 3.5; }
         else { nameEl.innerText = "AWAITING ACTIVATION..."; bloomPass.strength = 1.2; }
 
         for (let i = 0; i < COUNT; i++) {
@@ -354,7 +411,9 @@
             else if (tech === 'thanos') p = getThanos(i);
             else if (tech === 'tony') p = getTony(i);
             else if (tech === 'deadpool') p = getDeadpool(i);
+            else if (tech === 'spidey') p = getSpiderman(i);
             else { p = { x:(Math.random()-0.5)*220, y:(Math.random()-0.5)*160, z:(Math.random()-0.5)*120, r:0.05, g:0.05, b:0.15 }; }
+            
             targetPositions[i*3] = p.x; targetPositions[i*3+1] = p.y; targetPositions[i*3+2] = p.z;
             targetColors[i*3] = p.r; targetColors[i*3+1] = p.g; targetColors[i*3+2] = p.b;
         }
@@ -381,7 +440,9 @@
             const isPinching = pinchDist < (handSize * 0.35); 
             const indexExtended = lm[8].y < lm[5].y; 
 
-            if (middleUp && indexDown && ringDown && pinkyDown) { detected = 'deadpool'; }
+            // PRIORITY CHAIN
+            if (middleUp && indexDown && ringDown) { detected = 'deadpool'; }
+            else if (indexUp && pinkyUp && middleDown && ringDown && !isPinching) { detected = 'spidey'; }
             else if (indexUp && middleUp && ringDown && pinkyDown && !isPinching) { detected = 'tony'; }
             else if (indexUp && middleUp && ringUp && pinkyUp) { detected = 'thor'; }
             else if (indexUp && middleDown && ringDown && pinkyDown) { detected = 'loki'; }
@@ -411,6 +472,7 @@
         particles.geometry.attributes.position.needsUpdate = true;
         particles.geometry.attributes.color.needsUpdate = true;
 
+        // --- ANIMATIONS ---
         if (currentTech === 'thor') { 
             particles.rotation.y += 0.005; particles.rotation.x = 0; particles.rotation.z = 0; bloomPass.strength = 1.5 + (Math.random() > 0.98 ? 1.5 : 0);
         }
@@ -421,6 +483,11 @@
         else if (currentTech === 'deadpool') { 
             particles.rotation.z += 0.05; bloomPass.strength = 4.5 + Math.sin(time * 0.01) * 2.0;
             particles.position.x = (Math.random()-0.5)*0.5; particles.position.y = (Math.random()-0.5)*0.5;
+        }
+        else if (currentTech === 'spidey') {
+            particles.rotation.z = Math.sin(time * 0.001) * 0.05; 
+            bloomPass.strength = 3.5 + Math.sin(time * 0.005) * 0.5;
+            particles.position.set(0,0,0);
         }
         else { 
             particles.rotation.y += 0.001; bloomPass.strength = 1.0 + Math.sin(time * 0.001) * 0.2; particles.position.set(0,0,0);
